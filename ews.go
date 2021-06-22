@@ -105,7 +105,12 @@ func (c *client) SendAndReceive(body []byte) ([]byte, error) {
 
 func applyConfig(config *Config, client *http.Client) {
 	if config.NTLM {
-		client.Transport = ntlmssp.Negotiator{}
+		client.Transport = ntlmssp.Negotiator{
+			RoundTripper: &http.Transport{
+				TLSNextProto:    map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipTLS},
+			},
+		}
 	}
 	if config.SkipTLS {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
