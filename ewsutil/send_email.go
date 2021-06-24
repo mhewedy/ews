@@ -3,7 +3,7 @@ package ewsutil
 import "github.com/mhewedy/ews"
 
 // SendEmail helper method to send Message
-func SendEmail(c ews.Client, to []string, subject, body string) error {
+func SendEmail(c ews.Client, to []string, subject, body string) (err error) {
 
 	m := ews.Message{
 		ItemClass: "IPM.Note",
@@ -24,5 +24,6 @@ func SendEmail(c ews.Client, to []string, subject, body string) error {
 	}
 	m.ToRecipients.Mailbox = append(m.ToRecipients.Mailbox, mb...)
 
-	return ews.CreateMessageItem(c, m)
+	_, err = ews.CreateMessageItem(c, m)
+	return
 }

@@ -32,18 +32,18 @@ type Message struct {
 }
 
 type CalendarItem struct {
-	Subject                    string      `xml:"t:Subject"`
-	Body                       Body        `xml:"t:Body"`
-	ReminderIsSet              bool        `xml:"t:ReminderIsSet"`
-	ReminderMinutesBeforeStart int         `xml:"t:ReminderMinutesBeforeStart"`
-	Start                      time.Time   `xml:"t:Start"`
-	End                        time.Time   `xml:"t:End"`
-	IsAllDayEvent              bool        `xml:"t:IsAllDayEvent"`
-	LegacyFreeBusyStatus       string      `xml:"t:LegacyFreeBusyStatus"`
-	Location                   string      `xml:"t:Location"`
-	RequiredAttendees          []Attendees `xml:"t:RequiredAttendees"`
-	OptionalAttendees          []Attendees `xml:"t:OptionalAttendees"`
-	Resources                  []Attendees `xml:"t:Resources"`
+	Subject                    string      `xml:"t:Subject,omitempty"`
+	Body                       Body        `xml:"t:Body,omitempty"`
+	ReminderIsSet              bool        `xml:"t:ReminderIsSet,omitempty"`
+	ReminderMinutesBeforeStart int         `xml:"t:ReminderMinutesBeforeStart,omitempty"`
+	Start                      time.Time   `xml:"t:Start,omitempty"`
+	End                        time.Time   `xml:"t:End,omitempty"`
+	IsAllDayEvent              bool        `xml:"t:IsAllDayEvent,omitempty"`
+	LegacyFreeBusyStatus       string      `xml:"t:LegacyFreeBusyStatus,omitempty"`
+	Location                   string      `xml:"t:Location,omitempty"`
+	RequiredAttendees          []Attendees `xml:"t:RequiredAttendees,omitempty"`
+	OptionalAttendees          []Attendees `xml:"t:OptionalAttendees,omitempty"`
+	Resources                  []Attendees `xml:"t:Resources,omitempty"`
 }
 
 type Body struct {
@@ -75,21 +75,24 @@ type createItemResponseBodyEnvelop struct {
 	XMLName struct{}               `xml:"Envelope"`
 	Body    createItemResponseBody `xml:"Body"`
 }
+
 type createItemResponseBody struct {
-	CreateItemResponse CreateItemResponse `xml:"CreateItemResponse"`
+	CreateItemResponse ItemOperationResponse `xml:"CreateItemResponse"`
 }
 
-type CreateItemResponse struct {
+type ItemOperationResponse struct {
 	ResponseMessages ResponseMessages `xml:"ResponseMessages"`
 }
 
 type ResponseMessages struct {
 	CreateItemResponseMessage Response `xml:"CreateItemResponseMessage"`
+	UpdateItemResponseMessage Response `xml:"UpdateItemResponseMessage"`
+	DeleteItemResponseMessage Response `xml:"DeleteItemResponseMessage"`
 }
 
 // CreateMessageItem
 // https://docs.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem-operation-email-message
-func CreateMessageItem(c Client, m ...Message) error {
+func CreateMessageItem(c Client, m ...Message) ([]ItemId, error) {
 
 	item := &CreateItem{
 		MessageDisposition: "SendAndSaveCopy",
@@ -99,24 +102,25 @@ func CreateMessageItem(c Client, m ...Message) error {
 
 	xmlBytes, err := xml.MarshalIndent(item, "", "  ")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bb, err := c.SendAndReceive(xmlBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := checkCreateItemResponseForErrors(bb); err != nil {
-		return err
+	items, err := checkCreateItemResponseForErrors(bb)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return items.Message, nil
 }
 
 // CreateCalendarItem
 // https://docs.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem-operation-calendar-item
-func CreateCalendarItem(c Client, ci ...CalendarItem) error {
+func CreateCalendarItem(c Client, ci ...CalendarItem) ([]ItemId, error) {
 
 	item := &CreateItem{
 		SendMeetingInvitations: "SendToAllAndSaveCopy",
@@ -126,30 +130,32 @@ func CreateCalendarItem(c Client, ci ...CalendarItem) error {
 
 	xmlBytes, err := xml.MarshalIndent(item, "", "  ")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bb, err := c.SendAndReceive(xmlBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := checkCreateItemResponseForErrors(bb); err != nil {
-		return err
+	items, err := checkCreateItemResponseForErrors(bb)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return items.CalendarItem, nil
 }
 
-func checkCreateItemResponseForErrors(bb []byte) error {
+func checkCreateItemResponseForErrors(bb []byte) (items ResponseItems, err error) {
 	var soapResp createItemResponseBodyEnvelop
-	if err := xml.Unmarshal(bb, &soapResp); err != nil {
-		return err
+	if err = xml.Unmarshal(bb, &soapResp); err != nil {
+		return
 	}
 
 	resp := soapResp.Body.CreateItemResponse.ResponseMessages.CreateItemResponseMessage
 	if resp.ResponseClass == ResponseClassError {
-		return errors.New(resp.MessageText)
+		err = errors.New(resp.MessageText)
+		return
 	}
-	return nil
+	return resp.ResponseItems, nil
 }
