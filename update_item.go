@@ -77,8 +77,8 @@ func (f Field) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Flush()
 }
 
-func (cal CalendarItem) Fields() (fields []Field) {
-	val := reflect.ValueOf(cal)
+func getFields(obj interface{}) (fields []Field) {
+	val := reflect.Indirect(reflect.ValueOf(obj))
 	t := val.Type()
 	length := t.NumField()
 	for index := 0; index < length; index++ {
@@ -112,6 +112,21 @@ var itemFields = map[string]bool{
 	"t:Body":    true,
 }
 
+func getSetItemField(prefix string, fields ...Field) []SetItemField {
+	var setFields = make([]SetItemField, len(fields))
+	for index, field := range fields {
+		setFields[index].CalendarItem = []Field{field}
+		replace := prefix
+		if itemFields[field.Name] {
+			replace = "item"
+		}
+		setFields[index].FieldURI = FieldURI{
+			FieldURI: strings.Replace(field.Name, "t", replace, 1),
+		}
+	}
+	return setFields
+}
+
 // UpdateCalendarItem
 // https://docs.microsoft.com/en-us/exchange/client-developer/exchange-web-services/how-to-update-appointments-and-meetings-by-using-ews-in-exchange
 func UpdateCalendarItem(c Client, id ItemId, ci CalendarItem, strategy ...UpdateStrategy) ([]ItemId, error) {
@@ -122,18 +137,7 @@ func UpdateCalendarItem(c Client, id ItemId, ci CalendarItem, strategy ...Update
 		SendMeetingInvitationsOrCancellations: "SendToAllAndSaveCopy",
 	})
 
-	var fields = ci.Fields()
-	var setFields = make([]SetItemField, len(fields))
-	for index, field := range fields {
-		setFields[index].CalendarItem = []Field{field}
-		replace := "calendar"
-		if itemFields[field.Name] {
-			replace = "item"
-		}
-		setFields[index].FieldURI = FieldURI{
-			FieldURI: strings.Replace(field.Name, "t", replace, 1),
-		}
-	}
+	var setFields = getSetItemField("calendar", getFields(ci)...)
 
 	item := UpdateItem{
 		ItemChanges: ItemChanges{ItemChanges: []ItemChange{
