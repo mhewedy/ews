@@ -13,11 +13,18 @@ const (
 	ResponseClassError   ResponseClass = "Error"
 )
 
+type ResponseItems struct {
+	Message      []ItemId `xml:"Items>Message>ItemId"`
+	CalendarItem []ItemId `xml:"Items>CalendarItem>ItemId"`
+}
+
 type Response struct {
 	ResponseClass ResponseClass `xml:"ResponseClass,attr"`
 	MessageText   string        `xml:"MessageText"`
 	ResponseCode  string        `xml:"ResponseCode"`
 	MessageXml    MessageXml    `xml:"MessageXml"`
+
+	ResponseItems
 }
 
 type EmailAddress struct {

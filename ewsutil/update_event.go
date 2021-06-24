@@ -6,21 +6,21 @@ import (
 	"github.com/mhewedy/ews"
 )
 
-func CreateHTMLEvent(
-	c ews.Client, to, optional []string, subject, body, location string, from time.Time, duration time.Duration,
+func UpdateHTMLEvent(
+	c ews.Client, id ews.ItemId, to, optional []string, subject, body, location string, from time.Time, duration time.Duration,
 ) ([]ews.ItemId, error) {
-	return createEvent(c, to, optional, subject, body, location, "HTML", from, duration)
+	return updateEvent(c, id, to, optional, subject, body, location, "HTML", from, duration)
 }
 
-// CreateEvent helper method to send Message
-func CreateEvent(
-	c ews.Client, to, optional []string, subject, body, location string, from time.Time, duration time.Duration,
+// UpdateEvent helper method to update Message
+func UpdateEvent(
+	c ews.Client, id ews.ItemId, to, optional []string, subject, body, location string, from time.Time, duration time.Duration,
 ) ([]ews.ItemId, error) {
-	return createEvent(c, to, optional, subject, body, location, "Text", from, duration)
+	return updateEvent(c, id, to, optional, subject, body, location, "Text", from, duration)
 }
 
-func createEvent(
-	c ews.Client, to, optional []string, subject, body, location, bodyType string, from time.Time, duration time.Duration,
+func updateEvent(
+	c ews.Client, id ews.ItemId, to, optional []string, subject, body, location, bodyType string, from time.Time, duration time.Duration,
 ) ([]ews.ItemId, error) {
 
 	requiredAttendees := make([]ews.Attendee, len(to))
@@ -54,5 +54,5 @@ func createEvent(
 		Resources:            []ews.Attendees{{Attendee: room}},
 	}
 
-	return ews.CreateCalendarItem(c, m)
+	return ews.UpdateCalendarItem(c, id, m)
 }

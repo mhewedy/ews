@@ -2,13 +2,14 @@ package ews_test
 
 import (
 	"fmt"
-	. "github.com/mhewedy/ews"
-	"github.com/mhewedy/ews/ewsutil"
 	"io/ioutil"
 	"math"
 	"os"
 	"testing"
 	"time"
+
+	. "github.com/mhewedy/ews"
+	"github.com/mhewedy/ews/ewsutil"
 )
 
 func Test_Example(t *testing.T) {
@@ -74,7 +75,7 @@ func testCreateCalendarItem(c Client) error {
 	attendees := make([]Attendees, 0)
 	attendees = append(attendees, Attendees{Attendee: attendee})
 
-	return CreateCalendarItem(c, CalendarItem{
+	var _, err = CreateCalendarItem(c, CalendarItem{
 		Subject: "Planning Meeting",
 		Body: Body{
 			BodyType: "Text",
@@ -89,6 +90,7 @@ func testCreateCalendarItem(c Client) error {
 		Location:                   "Conference Room 721",
 		RequiredAttendees:          attendees,
 	})
+	return err
 }
 
 func testGetUserAvailability(c Client) error {
@@ -185,7 +187,7 @@ func testListUsersEvents(c Client) error {
 
 func testCreateEvent(c Client) error {
 
-	return ewsutil.CreateEvent(c,
+	var _, err = ewsutil.CreateEvent(c,
 		[]string{"mhewedy@mhewedy.onmicrosoft.com", "example2@mhewedy.onmicrosoft.com"},
 		[]string{},
 		"An Event subject",
@@ -194,11 +196,12 @@ func testCreateEvent(c Client) error {
 		time.Now().Add(24*time.Hour),
 		30*time.Minute,
 	)
+	return err
 }
 
 func testCreateHTMLEvent(c Client) error {
 
-	return ewsutil.CreateHTMLEvent(c,
+	var _, err = ewsutil.CreateHTMLEvent(c,
 		[]string{"mhewedy@mhewedy.onmicrosoft.com", "example@mhewedy.onmicrosoft.com"},
 		[]string{},
 		"An Event subject",
@@ -209,6 +212,7 @@ func testCreateHTMLEvent(c Client) error {
 		time.Now().Add(24*time.Hour),
 		30*time.Minute,
 	)
+	return err
 }
 
 func testGetRoomLists(c Client) error {
