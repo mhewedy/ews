@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/Azure/go-ntlmssp"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"os"
-
-	"github.com/Azure/go-ntlmssp"
 )
 
 const (
@@ -69,8 +67,6 @@ func (c *client) SendAndReceive(body []byte) ([]byte, error) {
 	bb = append(bb, body...)
 	bb = append(bb, soapEnd...)
 
-	os.WriteFile("./send.xml", bb, 0755)
-
 	req, err := http.NewRequest("POST", c.EWSAddr, bytes.NewReader(bb))
 	if err != nil {
 		return nil, err
@@ -104,7 +100,6 @@ func (c *client) SendAndReceive(body []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	os.WriteFile("./recv.xml", respBytes, 0755)
 	return respBytes, err
 }
 
